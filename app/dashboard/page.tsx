@@ -1,7 +1,19 @@
 import { Container } from "@/components/ui/container"
+import { getCurrentUser } from "@/server/actions"
 import { Users, ShoppingBag, FileText, UserCircle } from "lucide-react"
+import { redirect } from "next/navigation"
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+
+  const user = await getCurrentUser()
+    const level = user?.level
+
+    if(!user) {
+      redirect('/login')
+    }else if(level !== "ADMIN") {
+      redirect('/kasir')
+    }
+
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
       <Container className="bg-neo-pink">

@@ -7,10 +7,12 @@ import { z } from "zod";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+// import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Register } from "@/server/actions";
 import Link from "next/link";
+import { Eye, EyeOff } from "lucide-react";
+
 
 const FormSchema = z.object({
   username: z.string().min(1, { message: "Username is required." }),
@@ -23,6 +25,8 @@ const FormSchema = z.object({
 });
 
 export default function FormRegister() {
+const [showPassword, setShowPassword] = React.useState(false);
+
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -60,23 +64,24 @@ export default function FormRegister() {
       <div className="w-full max-w-[400px] space-y-8">
         {/* Header */}
         <div className="text-center">
-          <h1 className="text-2xl font-semibold">Create an account</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <h1 className="text-3xl font-semibold">Sign Up</h1>
+          {/* <p className="mt-2 text-sm text-muted-foreground">
             Please enter your details to register
-          </p>
+          </p> */}
         </div>
 
         {/* Form */}
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
             <FormField
               control={form.control}
               name="username"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Username</FormLabel>
+                  <FormLabel className="text-lg font-medium">Nama</FormLabel>
                   <FormControl>
-                    <Input placeholder="Username" {...field} />
+                  <input {...field} className="w-[25rem] border-black border-2 p-2.5 focus:outline-none focus:shadow-[2px_2px_0px_rgba(0,0,0,1)] focus:bg-[#a6c2ff] active:shadow-[2px_2px_0px_rgba(0,0,0,1)]" placeholder="Nama" />
+                    {/* <Input placeholder="Username" {...field} /> */}
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -88,11 +93,16 @@ export default function FormRegister() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel className="text-lg font-medium">Kata Sandi</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="Password" {...field} />
+                  <div className="relative">
+                    <input {...field}  type={showPassword ? "text" : "password"} placeholder="Kata Sandi" {...field}className="w-[25rem] border-black border-2 p-2.5 focus:outline-none focus:shadow-[2px_2px_0px_rgba(0,0,0,1)] focus:bg-[#a6c2ff]  active:shadow-[2px_2px_0px_rgba(0,0,0,1)]" />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-[30%] text-muted-foreground hover:text-foreground">
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage/>
                 </FormItem>
               )}
             />
@@ -102,9 +112,14 @@ export default function FormRegister() {
               name="confirmPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Confirm Password</FormLabel>
+                  <FormLabel className="text-lg font-medium">Kunci Kata Sandi</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="Confirm Password" {...field} />
+                    <div className="relative">
+                      <input {...field}  type={showPassword ? "text" : "password"} placeholder="Kunci Kata Sandi" {...field}className="w-[25rem] border-black border-2 p-2.5 focus:outline-none focus:shadow-[2px_2px_0px_rgba(0,0,0,1)] focus:bg-[#a6c2ff]  active:shadow-[2px_2px_0px_rgba(0,0,0,1)]" />
+                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-[30%] text-muted-foreground hover:text-foreground">
+                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                      </button>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -116,11 +131,11 @@ export default function FormRegister() {
               name="level"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>User Level</FormLabel>
+                  <FormLabel className="text-lg font-medium">User Level</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select user level" />
+                      <SelectValue placeholder="Select user level" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -133,16 +148,16 @@ export default function FormRegister() {
               )}
             />
 
-            <Button className="w-full bg-black text-white hover:bg-black/90" type="submit">
-              Sign Up
+            <Button className="text-xl font-semibold w-full bg-white text-black hover:bg-white/90" type="submit">
+              Daftar
             </Button>
           </form>
         </Form>
 
-        <p className="text-center text-sm text-muted-foreground">
-          Already have an account?{" "}
+        <p className="text-center text-lg text-muted-foreground">
+          Sudah punya akun?{" "}
           <Link href="/login" className="text-foreground hover:underline">
-            Log in
+            Masuk
           </Link>
         </p>
       </div>

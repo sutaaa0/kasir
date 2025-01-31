@@ -1,5 +1,5 @@
-import Sidebar from "@/components/Sidebar"
-import Header from "@/components/Header"
+import SidebarKasir from "@/components/SidebarKasir"
+import HeaderKasir from "@/components/HeaderKasir"
 import { Container } from "@/components/ui/container"
 
 export default function DashboardLayout({
@@ -9,9 +9,9 @@ export default function DashboardLayout({
 }) {
   return (
     <div className="flex h-screen bg-primary">
-      <Sidebar />
+      <SidebarKasir />
       <div className="flex-1 flex flex-col">
-        <Header />
+        <HeaderKasir />
         <main className="flex-1 p-6">
           <Container className="h-full bg-white">{children}</Container>
         </main>

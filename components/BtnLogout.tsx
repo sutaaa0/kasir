@@ -1,10 +1,11 @@
+"use client";
 import React from "react";
 import { toast } from "@/hooks/use-toast";
 import { Logout } from "@/server/actions";
 import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
 
-const LogoutBtnP = () => {
+const LogoutBtn = () => {
     const router = useRouter();
 
   const handleLogout = async () => {
@@ -34,9 +35,9 @@ const LogoutBtnP = () => {
   };
   return (
     <Button size="sm" className="transform rotate-1" onClick={handleLogout}>
-      Close Order
+      Logout
     </Button>
   );
 };
 
-export default LogoutBtnP;
+export default LogoutBtn;

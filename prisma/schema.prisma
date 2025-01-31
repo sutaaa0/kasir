@@ -48,25 +48,3 @@ model Produk {
   stok            Int
   detailPenjualan DetailPenjualan[]
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
