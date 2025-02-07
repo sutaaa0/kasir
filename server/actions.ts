@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import * as jose from "jose";
+import { redirect } from "next/navigation";
 
 // Create JWT token using jose
 async function createToken(payload: { userId: number; username: string; role: string }) {
@@ -261,7 +262,7 @@ export async function deleteProduct(id: number) {
   }
 }
 
-export const addPelanggan = async (namaPelanggan: string, alamat: string, nomorTelepon: number) => {
+export const addPelanggan = async (namaPelanggan: string, alamat: string, nomorTelepon: string) => {
   try {
     const pelanggan = await prisma.pelanggan.create({
       data: { 
@@ -299,7 +300,7 @@ export async function getPelanggans() {
   return pelanggans;
 }
 
-export async function updatePelanggan(pelangganId: number, namaPelanggan: string, alamat: string, nomorTelepon: number) {
+export async function updatePelanggan(pelangganId: number, namaPelanggan: string, alamat: string, nomorTelepon: string) {
   try {
     const pelanggan = await prisma.pelanggan.update({
       where: { pelangganId },
@@ -321,6 +322,74 @@ export async function deletePelanggan(id: number) {
     return { status: "Success", data: pelanggan, code: 200 };
   } catch (error) {
     return { status: "Failed", message: `${error}`, code: 500 };
+  }
+}
+
+
+
+type TransactionData = {
+  namaPelanggan: string;
+  alamat: string;
+  nomorTelepon: string;
+  jumlahProduk: number;
+};
+
+export async function handleTransaction(data: TransactionData) {
+  try {
+    // Buat data pelanggan
+    const pelanggan = await prisma.pelanggan.create({
+      data: {
+        namaPelanggan: data.namaPelanggan,
+        alamat: data.alamat,
+        nomorTelepon: data.nomorTelepon,
+      },
+    });
+
+    // Misalkan kita menggunakan produk default dengan produkId = 1.
+    // Pastikan produk dengan produkId tersebut ada di database.
+    const produkId = 1;
+    const produk = await prisma.produk.findUnique({
+      where: { produkId },
+    });
+
+    if (!produk) {
+      throw new Error('Produk default tidak ditemukan.');
+    }
+
+    // Hitung subtotal (harga produk * jumlah produk)
+    const subtotal = produk.harga * data.jumlahProduk;
+
+    // Buat data penjualan dan sekaligus buat detail penjualan
+    const penjualan = await prisma.penjualan.create({
+      data: {
+        tanggalPenjualan: new Date(),
+        totalHarga: subtotal,
+        pelangganId: pelanggan.pelangganId,
+        detailPenjualan: {
+          create: {
+            produkId: produk.produkId,
+            jumlahProduk: data.jumlahProduk,
+            subtotal: subtotal,
+          },
+        },
+      },
+      include: {
+        detailPenjualan: true,
+      },
+    });
+
+    // Update stok produk: kurangi dengan jumlah yang terjual
+    await prisma.produk.update({
+      where: { produkId },
+      data: {
+        stok: produk.stok - data.jumlahProduk,
+      },
+    });
+
+    return penjualan;
+  } catch (error) {
+    console.error('Gagal melakukan transaksi:', error);
+    throw error;
   }
 }
 

@@ -19,13 +19,13 @@ type Pelanggan = {
   pelangganId: number;
   namaPelanggan: string;
   alamat: string;
-  nomorTelepon: number;
+  nomorTelepon: string; // Changed to string
 };
 
 const FormSchema = z.object({
   namaPelanggan: z.string().min(2),
   alamat: z.string().min(2),
-  nomorTelepon: z.string(),
+  nomorTelepon: z.string().regex(/^\d+$/, "Nomor telepon harus berupa angka"),
 });
 
 export default function PelangganPage() {
@@ -56,7 +56,7 @@ export default function PelangganPage() {
   const handleOnSubmit = async (data: z.infer<typeof FormSchema>) => {
     const namaPelanggan = data.namaPelanggan;
     const alamat = data.alamat;
-    const nomorTelepon = Number(data.nomorTelepon);
+    const nomorTelepon = data.nomorTelepon; // No need to convert to Number
     const newPelanggan = await addPelanggan(namaPelanggan, alamat, nomorTelepon);
     if (newPelanggan.code === 200) {
       toast({
@@ -106,7 +106,7 @@ export default function PelangganPage() {
     setIsModalOpen(true);
   };
 
-  const handleUpdatePelanggan = async (id: number, namaPelanggan: string, alamat: string, nomorTelepon: number) => {
+  const handleUpdatePelanggan = async (id: number, namaPelanggan: string, alamat: string, nomorTelepon: string) => {
     try {
       const result = await updatePelanggan(id, namaPelanggan, alamat, nomorTelepon);
       if (result.code === 200) {
@@ -140,7 +140,7 @@ export default function PelangganPage() {
                 control={form.control}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nama Pelanggan</FormLabel>
+                    <FormLabel className="font-semibold">Nama Pelanggan</FormLabel>
                     <FormControl>
                       <Input {...field} placeholder="Nama Pelanggan" />
                     </FormControl>
@@ -152,7 +152,7 @@ export default function PelangganPage() {
                 control={form.control}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Alamat</FormLabel>
+                    <FormLabel className="font-semibold">Alamat</FormLabel>
                     <FormControl>
                       <Input {...field} placeholder="Alamat" />
                     </FormControl>
@@ -164,13 +164,13 @@ export default function PelangganPage() {
                 control={form.control}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nomor Telepon</FormLabel>
+                    <FormLabel className="font-semibold">Nomor Telepon</FormLabel>
                     <FormControl>
-                      <Input type="number" {...field} placeholder="Nomor Telepon" />
+                      <Input type="tel" {...field} placeholder="Nomor Telepon" />
                     </FormControl>
                   </FormItem>
                 )}
-              />{" "}
+              />
               <Button type="submit" className="bg-primary hover:bg-primary/80 mt-6">
                 <Plus className="mr-2 h-5 w-5" /> Tambah Pelanggan
               </Button>
@@ -209,9 +209,19 @@ export default function PelangganPage() {
         </Table>
       </Container>
 
-      <ConfirmDialog isOpen={confirmDialogOpen} onClose={() => setConfirmDialogOpen(false)} onConfirm={handleConfirmDelete} message="Are you sure you want to delete this pelanggan?" />
+      <ConfirmDialog 
+        isOpen={confirmDialogOpen} 
+        onClose={() => setConfirmDialogOpen(false)} 
+        onConfirm={handleConfirmDelete} 
+        message="Are you sure you want to delete this pelanggan?" 
+      />
 
-      <UpdatePelangganModal pelanggan={selectedPelanggan} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onUpdate={handleUpdatePelanggan} />
+      <UpdatePelangganModal 
+        pelanggan={selectedPelanggan} 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onUpdate={handleUpdatePelanggan} 
+      />
     </div>
   );
 }

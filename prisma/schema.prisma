@@ -18,7 +18,7 @@ model Pelanggan {
   pelangganId   Int         @id @default(autoincrement())
   namaPelanggan String
   alamat        String
-  nomorTelepon  Int
+  nomorTelepon  String
   penjualan     Penjualan[]
 }
 

@@ -17,16 +17,14 @@ const FormSchema = z.object({
   alamat: z.string().min(2, {
     message: "Alamat minimal 2 karakter",
   }),
-  nomorTelepon: z.number().int().positive({
-    message: "Nomor telepon harus bilangan bulat positif",
-  }),
+  nomorTelepon: z.string().regex(/^\d+$/, "Nomor telepon harus berupa angka"),
 })
 
 type UpdatePelangganModalProps = {
-  pelanggan: { pelangganId: number; namaPelanggan: string; alamat: string; nomorTelepon: number } | null
+  pelanggan: { pelangganId: number; namaPelanggan: string; alamat: string; nomorTelepon: string } | null
   isOpen: boolean
   onClose: () => void
-  onUpdate: (id: number, namaPelanggan: string, alamat: string, nomorTelepon: number) => void
+  onUpdate: (id: number, namaPelanggan: string, alamat: string, nomorTelepon: string) => void
 }
 
 export function UpdatePelangganModal({ pelanggan, isOpen, onClose, onUpdate }: UpdatePelangganModalProps) {
@@ -41,7 +39,7 @@ export function UpdatePelangganModal({ pelanggan, isOpen, onClose, onUpdate }: U
     defaultValues: {
       namaPelanggan: pelanggan?.namaPelanggan || "",
       alamat: pelanggan?.alamat || "",
-      nomorTelepon: pelanggan?.nomorTelepon || 0,
+      nomorTelepon: pelanggan?.nomorTelepon || "",
     },
   })
 

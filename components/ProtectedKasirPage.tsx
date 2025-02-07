@@ -2,7 +2,7 @@ import { getCurrentUser } from "@/server/actions";
 import { redirect } from "next/navigation";
 import React from "react";
 
-const page = async () => {
+const ProtectedKasirPage = async ({ children }: { children: React.ReactNode }) => {
   const user = await getCurrentUser();
   const level = user?.level;
 
@@ -12,10 +12,7 @@ const page = async () => {
     redirect("/kasir");
   }
 
-  return <div>page
-
-    
-  </div>;
+  return <>{children}</>;
 };
 
-export default page;
+export default ProtectedKasirPage;

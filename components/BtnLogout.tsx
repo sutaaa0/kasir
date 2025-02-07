@@ -14,8 +14,8 @@ const LogoutBtn = () => {
 
       if (log.status === "Success") {
         toast({
-          title: "Logout success",
-          description: "You have been logged out",
+          title: "Logout Berhasil",
+          description: "Anda telah keluar",
         });
 
         // Use router.push instead of redirect
@@ -27,15 +27,15 @@ const LogoutBtn = () => {
       if (error) {
         toast({
           title: "Error",
-          description: "Something went wrong while logging out",
+          description: "Terjadi kesalahan saat logout",
           variant: "destructive",
         });
       }
     }
   };
   return (
-    <Button size="sm" className="transform rotate-1" onClick={handleLogout}>
-      Logout
+    <Button size="sm" className="transform rotate-1 bg-red-500" onClick={handleLogout}>
+      Keluar
     </Button>
   );
 };

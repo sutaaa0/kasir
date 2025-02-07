@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { Container } from "@/components/ui/container"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+// import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Plus, Pencil, Trash } from "lucide-react"
@@ -24,10 +24,10 @@ type User = {
 
 const FormSchema = z.object({
   username: z.string().min(2, {
-    message: "Username must be at least 2 characters.",
+    message: "Nama tidak boleh kosong.",
   }),
-  password: z.string().min(8, { message: "Password must be at least 8 characters." }),
-  level: z.string(),
+  password: z.string().min(8, { message: "Kata sandi minimal 8 karakter." }),
+  level: z.string().min(1, { message: "Tolong pilih level pengguna." }),
 })
 
 export default function UsersPage() {
@@ -129,8 +129,8 @@ export default function UsersPage() {
     <div className="space-y-6">
       <h2 className="text-4xl font-bold">Manajemen Pengguna</h2>
 
-      <Container>
-        <div className="flex gap-4">
+      <Container className="bg-secondary">
+        <div className="flex gap-[10px]">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="flex gap-12 justify-center items-center">
               <FormField
@@ -138,13 +138,9 @@ export default function UsersPage() {
                 name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Username</FormLabel>
+                    <FormLabel className="text-lg font-bold">Nama</FormLabel>
                     <FormControl>
-                      <Input
-                        {...field}
-                        className="w-[25rem] border-black border-2 p-2.5 focus:outline-none focus:shadow-[2px_2px_0px_rgba(0,0,0,1)] focus:bg-[#FFA6F6] active:shadow-[2px_2px_0px_rgba(0,0,0,1)]"
-                        placeholder="Username"
-                      />
+                    <input {...field} className="w-[280px] border-black border-2 p-2.5 focus:outline-none focus:shadow-[2px_2px_0px_rgba(0,0,0,1)] focus:bg-[#a6c2ff] placeholder:text-black active:shadow-[2px_2px_0px_rgba(0,0,0,1)]" placeholder="Nama" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -156,12 +152,12 @@ export default function UsersPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel className="text-lg font-bold">Password</FormLabel>
                     <FormControl>
-                      <Input
+                      <input
                         {...field}
                         type="password"
-                        className="w-[25rem] border-black border-2 p-2.5 focus:outline-none focus:shadow-[2px_2px_0px_rgba(0,0,0,1)] focus:bg-[#FFA6F6] active:shadow-[2px_2px_0px_rgba(0,0,0,1)]"
+                        className="w-[280px] border-black border-2 p-2.5 focus:outline-none focus:shadow-[2px_2px_0px_rgba(0,0,0,1)] focus:bg-[#a6c2ff] placeholder:text-black active:shadow-[2px_2px_0px_rgba(0,0,0,1)]"
                         placeholder="Password"
                       />
                     </FormControl>
@@ -175,11 +171,11 @@ export default function UsersPage() {
                 name="level"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>User Level</FormLabel>
+                    <FormLabel className="text-lg font-bold">Level Pengguna</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select level" className="placeholder:text-sm text-sm" />
+                          <SelectValue placeholder="Pilih level pengguna" className="placeholder:text-sm text-sm" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -201,9 +197,9 @@ export default function UsersPage() {
         </div>
       </Container>
 
-      <Container noPadding>
+      <Container noPadding >
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-secondary">
             <TableRow>
               <TableHead>Id</TableHead>
               <TableHead>Name</TableHead>

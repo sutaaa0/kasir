@@ -140,7 +140,7 @@ export default function ProductsPage() {
                 control={form.control}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nama Produk</FormLabel>
+                    <FormLabel className="font-semibold">Nama Produk</FormLabel>
                     <FormControl>
                       <Input {...field} placeholder="Nama Produk" />
                     </FormControl>
@@ -152,9 +152,9 @@ export default function ProductsPage() {
                 control={form.control}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Harga</FormLabel>
+                    <FormLabel className="font-semibold">Harga</FormLabel>
                     <FormControl>
-                      <Input type="number" {...field} placeholder="Harga Produk" />
+                      <Input type="text" {...field} placeholder="Harga Produk" />
                     </FormControl>
                   </FormItem>
                 )}
@@ -164,7 +164,7 @@ export default function ProductsPage() {
                 control={form.control}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Stok</FormLabel>
+                    <FormLabel className="font-semibold">Stok</FormLabel>
                     <FormControl>
                       <Input type="number" {...field} placeholder="Stok Produk" />
                     </FormControl>
