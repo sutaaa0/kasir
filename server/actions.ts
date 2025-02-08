@@ -3,7 +3,6 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import * as jose from "jose";
-import { redirect } from "next/navigation";
 
 // Create JWT token using jose
 async function createToken(payload: { userId: number; username: string; role: string }) {
@@ -203,6 +202,7 @@ export const addProduct = async (namaProduk: string, harga: number, stok: number
     const product = await prisma.produk.create({
       data: { 
         namaProduk, 
+        imgUrl: "",
         harga: Number(harga), // Pastikan nilai number
         stok: Number(stok) 
       },
@@ -327,69 +327,146 @@ export async function deletePelanggan(id: number) {
 
 
 
-type TransactionData = {
-  namaPelanggan: string;
-  alamat: string;
-  nomorTelepon: string;
-  jumlahProduk: number;
+export type CartItem = {
+  produkId: number;
+  quantity: number;
 };
 
-export async function handleTransaction(data: TransactionData) {
+export async function getProductsForKasir() {
   try {
-    // Buat data pelanggan
-    const pelanggan = await prisma.pelanggan.create({
-      data: {
-        namaPelanggan: data.namaPelanggan,
-        alamat: data.alamat,
-        nomorTelepon: data.nomorTelepon,
-      },
-    });
-
-    // Misalkan kita menggunakan produk default dengan produkId = 1.
-    // Pastikan produk dengan produkId tersebut ada di database.
-    const produkId = 1;
-    const produk = await prisma.produk.findUnique({
-      where: { produkId },
-    });
-
-    if (!produk) {
-      throw new Error('Produk default tidak ditemukan.');
-    }
-
-    // Hitung subtotal (harga produk * jumlah produk)
-    const subtotal = produk.harga * data.jumlahProduk;
-
-    // Buat data penjualan dan sekaligus buat detail penjualan
-    const penjualan = await prisma.penjualan.create({
-      data: {
-        tanggalPenjualan: new Date(),
-        totalHarga: subtotal,
-        pelangganId: pelanggan.pelangganId,
-        detailPenjualan: {
-          create: {
-            produkId: produk.produkId,
-            jumlahProduk: data.jumlahProduk,
-            subtotal: subtotal,
-          },
-        },
-      },
-      include: {
-        detailPenjualan: true,
-      },
-    });
-
-    // Update stok produk: kurangi dengan jumlah yang terjual
-    await prisma.produk.update({
-      where: { produkId },
-      data: {
-        stok: produk.stok - data.jumlahProduk,
-      },
-    });
-
-    return penjualan;
+    const products = await prisma.produk.findMany();
+    return products;
   } catch (error) {
-    console.error('Gagal melakukan transaksi:', error);
-    throw error;
+    console.error("Error fetching products:", error);
+    throw new Error("Failed to fetch products");
   }
 }
 
+export async function getCustomers() {
+  try {
+    const customers = await prisma.pelanggan.findMany();
+    return customers;
+  } catch (error) {
+    console.error("Error fetching customers:", error);
+    throw new Error("Failed to fetch customers");
+  }
+}
+
+export async function createCustomer(
+  namaPelanggan: string,
+  alamat: string,
+  nomorTelepon: string
+) {
+  try {
+    const newCustomer = await prisma.pelanggan.create({
+      data: {
+        namaPelanggan,
+        alamat,
+        nomorTelepon,
+      },
+    });
+    return newCustomer;
+  } catch (error) {
+    console.error("Error creating customer:", error);
+    throw new Error("Failed to create customer");
+  }
+}
+
+export async function createTransaction(
+  pelangganId: number,
+  items: CartItem[],
+  total: number,
+  payment: number,
+  change: number
+) {
+  try {
+    // Validasi stok produk terlebih dahulu
+    for (const item of items) {
+      const product = await prisma.produk.findUnique({
+        where: { produkId: item.produkId },
+      });
+      if (!product || product.stok < item.quantity) {
+        throw new Error(`Stok tidak mencukupi untuk ${product?.namaProduk}`);
+      }
+    }
+
+    const transaction = await prisma.$transaction(async (tx) => {
+      // Buat data Penjualan dengan tambahan uang pembayaran dan kembalian
+      const penjualan = await tx.penjualan.create({
+        data: {
+          tanggalPenjualan: new Date(),
+          totalHarga: total,
+          uangPembayaran: payment,
+          kembalian: change,
+          pelangganId: pelangganId,
+        },
+      });
+
+      // Buat data DetailPenjualan dan update stok produk
+      for (const item of items) {
+        const product = await tx.produk.findUnique({
+          where: { produkId: item.produkId },
+        });
+
+        if (!product) continue;
+
+        await tx.detailPenjualan.create({
+          data: {
+            penjualanId: penjualan.penjualanId,
+            produkId: item.produkId,
+            jumlahProduk: item.quantity,
+            subtotal: product.harga * item.quantity,
+          },
+        });
+
+        await tx.produk.update({
+          where: { produkId: item.produkId },
+          data: { stok: { decrement: item.quantity } },
+        });
+      }
+
+      return penjualan;
+    });
+
+    return transaction;
+  } catch (error) {
+    throw new Error(
+      `Transaction failed: ${error instanceof Error ? error.message : "Unknown error"}`
+    );
+  }
+}
+
+export async function getPurchases() {
+  try {
+    const purchases = await prisma.penjualan.findMany({
+      include: {
+        pelanggan: true,
+        detailPenjualan: {
+          include: {
+            produk: true,
+          },
+        },
+      },
+    });
+
+    // Transformasikan data agar sesuai dengan tipe Purchase yang digunakan di client
+    const transformed = purchases.map((purchase) => ({
+      id: purchase.penjualanId,
+      date: purchase.tanggalPenjualan.toISOString().split("T")[0], // format YYYY-MM-DD
+      customer: purchase.pelanggan.namaPelanggan,
+      total: purchase.totalHarga,
+      details: (Array.isArray(purchase.detailPenjualan) ? purchase.detailPenjualan : [purchase.detailPenjualan]).map((detail) => ({
+        productId: detail.produkId,
+        productName: detail.produk.namaProduk,
+        quantity: detail.jumlahProduk,
+        price: detail.produk.harga,
+        subtotal: detail.subtotal,
+      })),
+    }));
+
+    return transformed;
+  } catch (error) {
+    console.error("Error fetching purchases:", error);
+    throw new Error("Failed to fetch purchases");
+  }
+}
