@@ -27,6 +27,8 @@ model Penjualan {
   tanggalPenjualan DateTime
   totalHarga       Float
   pelangganId      Int
+  uangPembayaran   Float            // Uang yang dibayarkan
+  kembalian        Float            // Kembalian yang diberikan
   detailPenjualan  DetailPenjualan?
   pelanggan        Pelanggan        @relation(fields: [pelangganId], references: [pelangganId])
 }
@@ -46,5 +48,6 @@ model Produk {
   namaProduk      String
   harga           Int
   stok            Int
+  imgUrl  String
   detailPenjualan DetailPenjualan[]
 }
