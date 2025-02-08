@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Container } from "@/components/ui/container"
-import { Button } from "@/components/ui/button"
+import { useState, useEffect } from "react";
+import { Container } from "@/components/ui/container";
+import { Button } from "@/components/ui/button";
 import { 
   Table, 
   TableBody, 
@@ -10,78 +10,54 @@ import {
   TableHead, 
   TableHeader, 
   TableRow 
-} from "@/components/ui/table"
+} from "@/components/ui/table";
 import { 
   Dialog, 
   DialogContent, 
   DialogHeader, 
   DialogTitle 
-} from "@/components/ui/dialog"
-import { Eye } from "lucide-react"
+} from "@/components/ui/dialog";
+import { Eye } from "lucide-react";
+import { getPurchases } from "@/server/actions";
 
 type ProductDetail = {
-  productId: number
-  productName: string
-  quantity: number
-  price: number
-  subtotal: number
-}
+  productId: number;
+  productName: string;
+  quantity: number;
+  price: number;
+  subtotal: number;
+};
 
 type Purchase = {
-  id: number
-  date: string
-  customer: string
-  total: number
-  details: ProductDetail[]
-}
+  id: number;
+  date: string;
+  customer: string;
+  total: number;
+  details: ProductDetail[];
+};
 
 export default function PurchasesPage() {
-  const [purchases, setPurchases] = useState<Purchase[]>([
-    { 
-      id: 1, 
-      date: "2023-06-01", 
-      customer: "John Doe", 
-      total: 150000,
-      details: [
-        {
-          productId: 1,
-          productName: "Laptop ASUS X441MA",
-          quantity: 2,
-          price: 50000,
-          subtotal: 100000
-        },
-        {
-          productId: 2,
-          productName: "Mouse Wireless",
-          quantity: 1,
-          price: 50000,
-          subtotal: 50000
-        }
-      ]
-    },
-    { 
-      id: 2, 
-      date: "2023-06-02", 
-      customer: "Jane Smith", 
-      total: 200000,
-      details: [
-        {
-          productId: 3,
-          productName: "Keyboard Mechanical",
-          quantity: 1,
-          price: 200000,
-          subtotal: 200000
-        }
-      ]
-    },
-  ])
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [selectedPurchase, setSelectedPurchase] = useState<Purchase | null>(null);
 
-  const [selectedPurchase, setSelectedPurchase] = useState<Purchase | null>(null)
+  useEffect(() => {
+    async function fetchPurchases() {
+      try {
+        const data = await getPurchases();
+        setPurchases(data);
+
+        console.log("data yang diterima :",data)
+      } catch (error) {
+        console.error("Error fetching purchases:", error);
+      }
+    }
+    fetchPurchases();
+  }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
       <h2 className="text-4xl font-bold">Riwayat Pembelian</h2>
-
+      
       <Container noPadding>
         <Table>
           <TableHeader>
@@ -165,5 +141,5 @@ export default function PurchasesPage() {
         </DialogContent>
       </Dialog>
     </div>
-  )
+  );
 }
