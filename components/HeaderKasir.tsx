@@ -21,18 +21,12 @@ interface HeaderKasirProps {
   onMenuClick: () => void;
 }
 
-const HeaderKasir = ({ onMenuClick }: HeaderKasirProps) => {
+const HeaderKasir = ({ onMenuClick}: HeaderKasirProps) => {
   return (
     <header className="bg-white p-4 shadow-md">
-      <Button 
-        onClick={onMenuClick} 
-        variant="ghost" 
-        size="sm"
-        className="lg:hidden"
-      >
+      <Button onClick={onMenuClick} variant="ghost" size="sm" className="lg:hidden">
         <Menu className="h-6 w-6" />
       </Button>
-      {/* Add other header content here */}
     </header>
   );
 };
