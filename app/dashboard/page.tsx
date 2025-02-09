@@ -1,7 +1,17 @@
-import { Container } from "@/components/ui/container"
-import { Users, ShoppingBag, FileText, UserCircle } from "lucide-react"
+import { Container } from "@/components/ui/container";
+import { getCurrentUser } from "@/server/actions";
+import { Users, ShoppingBag, FileText, UserCircle } from "lucide-react";
+import { redirect } from "next/navigation";
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const currentUser = await getCurrentUser();
+
+  if (!currentUser) {
+    redirect("/login");
+  } else if (currentUser.level !== "ADMIN") {
+    redirect("/kasir");
+  }
+
   return (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
       <Container className="bg-neo-pink">
@@ -36,5 +46,5 @@ export default function DashboardPage() {
         <p className="text-4xl font-bold">250</p>
       </Container>
     </div>
-  )
+  );
 }
