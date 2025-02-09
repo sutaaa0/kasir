@@ -6,13 +6,9 @@ import { Plus, Minus, ShoppingCart } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import {
-  createTransaction,
-  createCustomer,
-  getProductsForKasir,
-  getCustomers,
-  type CartItem as ServerCartItem,
-} from "@/server/actions";
+import { createTransaction, createCustomer, getProductsForKasir, getCustomers, type CartItem as ServerCartItem, getCurrentUser, Logout } from "@/server/actions";
+import { redirect, useRouter } from "next/navigation";
+import { toast } from "@/hooks/use-toast";
 
 interface Product {
   produkId: number;
@@ -52,6 +48,19 @@ export default function TransaksiPage() {
   const [newCustomerName, setNewCustomerName] = useState("");
   const [newCustomerAddress, setNewCustomerAddress] = useState("");
   const [newCustomerPhone, setNewCustomerPhone] = useState("");
+  const router = useRouter();
+
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      const currentUser = await getCurrentUser();
+      if (!currentUser) {
+        redirect("/login");
+      } else if (currentUser.level === "ADMIN") {
+        redirect("/dashboard");
+      }
+    };
+    fetchCurrentUser();
+  }, []);
 
   // Load produk dari database
   useEffect(() => {
@@ -65,6 +74,8 @@ export default function TransaksiPage() {
     };
     loadProducts();
   }, []);
+
+  
 
   // Load pelanggan dari database
   useEffect(() => {
@@ -92,22 +103,14 @@ export default function TransaksiPage() {
     setCart((currentCart) => {
       const existingItem = currentCart.find((item) => item.produkId === product.produkId);
       if (existingItem) {
-        return currentCart.map((item) =>
-          item.produkId === product.produkId ? { ...item, quantity: item.quantity + 1 } : item
-        );
+        return currentCart.map((item) => (item.produkId === product.produkId ? { ...item, quantity: item.quantity + 1 } : item));
       }
       return [...currentCart, { ...product, quantity: 1 }];
     });
   };
 
   const removeFromCart = (productId: number) => {
-    setCart((currentCart) =>
-      currentCart
-        .map((item) =>
-          item.produkId === productId ? { ...item, quantity: Math.max(0, item.quantity - 1) } : item
-        )
-        .filter((item) => item.quantity > 0)
-    );
+    setCart((currentCart) => currentCart.map((item) => (item.produkId === productId ? { ...item, quantity: Math.max(0, item.quantity - 1) } : item)).filter((item) => item.quantity > 0));
   };
 
   // Total tanpa pajak
@@ -119,7 +122,7 @@ export default function TransaksiPage() {
       return;
     }
 
-    const payment = parseFloat(paymentAmount);
+    const payment = Number.parseFloat(paymentAmount);
     if (isNaN(payment)) {
       alert("Masukkan jumlah uang pembayaran yang valid");
       return;
@@ -142,9 +145,7 @@ export default function TransaksiPage() {
       await createTransaction(selectedPelangganId, serverCart, total, payment, change);
 
       // Buat data nota pembayaran
-      const selectedCustomer = customers.find(
-        (customer) => customer.pelangganId === selectedPelangganId
-      );
+      const selectedCustomer = customers.find((customer) => customer.pelangganId === selectedPelangganId);
       const receiptData: ReceiptData = {
         customerName: selectedCustomer ? selectedCustomer.namaPelanggan : "Unknown",
         items: cart,
@@ -180,30 +181,47 @@ export default function TransaksiPage() {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      const log = await Logout();
+
+      if (log.status === "Success") {
+        toast({
+          title: "Logout Berhasil",
+          description: "Anda telah keluar",
+        });
+
+        router.push("/login");
+        router.refresh();
+      }
+    } catch (error) {
+      if (error) {
+        toast({
+          title: "Error",
+          description: "Terjadi kesalahan saat logout",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   return (
     <div className="flex h-full gap-6">
+      <Button onClick={() => handleLogout()} className="fixed top-4 right-4 bg-red-500 text-white font-bold text-xl tracking-widest py-2 px-4 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all">
+        Logout
+      </Button>
+
       {/* Section Produk */}
       <div className="flex-1">
         <Container>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {serverProducts.map((product) => (
-              <div
-                key={product.produkId}
-                className="border-4 border-black p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-x-1 hover:translate-y-1 transition-all"
-              >
+              <div key={product.produkId} className="border-4 border-black p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-x-1 hover:translate-y-1 transition-all">
                 <div className="aspect-square bg-gray-200 mb-4">
                   {product.imgUrl ? (
-                    <Image
-                      width={200}
-                      height={200}
-                      src={product.imgUrl}
-                      alt={product.namaProduk}
-                      className="w-full h-full object-cover"
-                    />
+                    <Image width={200} height={200} src={product.imgUrl || "/placeholder.svg"} alt={product.namaProduk} className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-black font-bold">
-                      NO IMAGE
-                    </div>
+                    <div className="w-full h-full flex items-center justify-center text-black font-bold">NO IMAGE</div>
                   )}
                 </div>
                 <h3 className="font-bold mb-2 text-lg">{product.namaProduk}</h3>
@@ -228,19 +246,11 @@ export default function TransaksiPage() {
 
         {/* Dropdown Pemilihan Pelanggan dengan gaya neo brutalism */}
         <div className="mb-4">
-          <label
-            htmlFor="customer-select"
-            className="block text-lg font-bold text-black border-b-4 border-black pb-1"
-          >
+          <label htmlFor="customer-select" className="block text-lg font-bold text-black border-b-4 border-black pb-1">
             Pilih Pelanggan
           </label>
           <div className="flex gap-2">
-            <select
-              id="customer-select"
-              className="mt-2 w-full p-2 bg-gray-100 border-4 border-black font-bold text-xl tracking-widest"
-              value={selectedPelangganId || ""}
-              onChange={(e) => setSelectedPelangganId(Number(e.target.value))}
-            >
+            <select id="customer-select" className="mt-2 w-full p-2 bg-gray-100 border-4 border-black font-bold text-xl tracking-widest" value={selectedPelangganId || ""} onChange={(e) => setSelectedPelangganId(Number(e.target.value))}>
               <option value="" disabled>
                 -- Pilih Pelanggan --
               </option>
@@ -250,10 +260,7 @@ export default function TransaksiPage() {
                 </option>
               ))}
             </select>
-            <Button
-              onClick={() => setNewCustomerModalOpen(true)}
-              className="mt-2 border-4 border-black bg-white font-bold text-xl px-2"
-            >
+            <Button onClick={() => setNewCustomerModalOpen(true)} className="mt-2 border-4 border-black bg-white font-bold text-xl px-2">
               +
             </Button>
           </div>
@@ -262,10 +269,7 @@ export default function TransaksiPage() {
         {/* Daftar Produk di Keranjang */}
         <div className="flex-1 overflow-auto">
           {cart.map((item) => (
-            <div
-              key={item.produkId}
-              className="flex justify-between items-center py-2 border-b-4 border-black my-2"
-            >
+            <div key={item.produkId} className="flex justify-between items-center py-2 border-b-4 border-black my-2">
               <div>
                 <h3 className="font-bold text-xl">{item.namaProduk}</h3>
                 <p className="text-lg font-mono">Rp {item.harga.toLocaleString()}</p>
@@ -314,33 +318,15 @@ export default function TransaksiPage() {
       {/* Modal Nota Pembayaran dengan gaya neo brutalism */}
       <Transition appear show={!!receipt} as={Fragment}>
         <Dialog as="div" className="relative z-50" onClose={() => setReceipt(null)}>
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
+          <Transition.Child as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-200" leaveFrom="opacity-100" leaveTo="opacity-0">
             <div className="fixed inset-0 bg-black bg-opacity-40" />
           </Transition.Child>
 
           <div className="fixed inset-0 overflow-y-auto">
             <div className="flex min-h-full items-center justify-center p-4 text-center">
-              <Transition.Child
-                as={Fragment}
-                enter="ease-out duration-300"
-                enterFrom="opacity-0 scale-90"
-                enterTo="opacity-100 scale-100"
-                leave="ease-in duration-200"
-                leaveFrom="opacity-100 scale-100"
-                leaveTo="opacity-0 scale-90"
-              >
+              <Transition.Child as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0 scale-90" enterTo="opacity-100 scale-100" leave="ease-in duration-200" leaveFrom="opacity-100 scale-100" leaveTo="opacity-0 scale-90">
                 <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded border-8 border-black bg-yellow-300 p-6 text-left align-middle shadow-[8px_8px_0px_0px_black] transition-all">
-                  <Dialog.Title className="text-3xl font-bold tracking-widest text-black mb-4">
-                    NOTA PEMBAYARAN
-                  </Dialog.Title>
+                  <Dialog.Title className="text-3xl font-bold tracking-widest text-black mb-4">NOTA PEMBAYARAN</Dialog.Title>
                   <div className="space-y-2">
                     <p className="text-xl">
                       <strong>Nama Pembeli:</strong> {receipt?.customerName}
@@ -350,8 +336,7 @@ export default function TransaksiPage() {
                       <ul className="list-disc ml-5 text-lg">
                         {receipt?.items.map((item) => (
                           <li key={item.produkId}>
-                            {item.namaProduk} - Jumlah: {item.quantity} - Harga: Rp{" "}
-                            {(item.harga * item.quantity).toLocaleString()}
+                            {item.namaProduk} - Jumlah: {item.quantity} - Harga: Rp {(item.harga * item.quantity).toLocaleString()}
                           </li>
                         ))}
                       </ul>
@@ -381,32 +366,14 @@ export default function TransaksiPage() {
       {/* Modal Tambah Pelanggan Baru */}
       <Transition appear show={newCustomerModalOpen} as={Fragment}>
         <Dialog as="div" className="relative z-50" onClose={() => setNewCustomerModalOpen(false)}>
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
+          <Transition.Child as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-200" leaveFrom="opacity-100" leaveTo="opacity-0">
             <div className="fixed inset-0 bg-black bg-opacity-40" />
           </Transition.Child>
           <div className="fixed inset-0 overflow-y-auto">
             <div className="flex min-h-full items-center justify-center p-4 text-center">
-              <Transition.Child
-                as={Fragment}
-                enter="ease-out duration-300"
-                enterFrom="opacity-0 scale-90"
-                enterTo="opacity-100 scale-100"
-                leave="ease-in duration-200"
-                leaveFrom="opacity-100 scale-100"
-                leaveTo="opacity-0 scale-90"
-              >
+              <Transition.Child as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0 scale-90" enterTo="opacity-100 scale-100" leave="ease-in duration-200" leaveFrom="opacity-100 scale-100" leaveTo="opacity-0 scale-90">
                 <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded border-8 border-black bg-yellow-300 p-6 text-left align-middle shadow-[8px_8px_0px_0px_black] transition-all">
-                  <Dialog.Title className="text-3xl font-bold tracking-widest text-black mb-4">
-                    TAMBAH PELANGGAN
-                  </Dialog.Title>
+                  <Dialog.Title className="text-3xl font-bold tracking-widest text-black mb-4">TAMBAH PELANGGAN</Dialog.Title>
                   <div className="space-y-4">
                     <div>
                       <label className="block text-xl font-bold text-black">Nama Pelanggan</label>
