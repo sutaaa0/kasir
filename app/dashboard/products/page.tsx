@@ -26,6 +26,8 @@ const FormSchema = z.object({
   namaProduk: z.string().min(2),
   harga: z.string(),
   stok: z.string(),
+  // Field imageFile berupa base64 string yang bersifat opsional
+  imageFile: z.string().optional(),
 });
 
 export default function ProductsPage() {
@@ -41,6 +43,7 @@ export default function ProductsPage() {
       namaProduk: "",
       harga: "",
       stok: "",
+      imageFile: "",
     },
   });
 
@@ -57,7 +60,9 @@ export default function ProductsPage() {
     const nama = data.namaProduk;
     const harga = Number(data.harga);
     const stok = Number(data.stok);
-    const newProduk = await addProduct(nama, harga, stok);
+    const imageFile = data.imageFile; // data berupa base64 (jika diunggah)
+
+    const newProduk = await addProduct(nama, harga, stok, imageFile);
     if (newProduk.code === 200) {
       toast({
         variant: "success",
@@ -87,14 +92,14 @@ export default function ProductsPage() {
         toast({
           variant: "success",
           title: "Success",
-          description: "Pengguna berhasil dihapus",
+          description: "Produk berhasil dihapus",
         });
         fetchProducts();
       } else {
         toast({
           variant: "destructive",
           title: "Failed",
-          description: "Pengguna gagal dihapus",
+          description: "Produk gagal dihapus",
         });
       }
     }
@@ -128,49 +133,80 @@ export default function ProductsPage() {
     }
   };
 
+  // Fungsi untuk membaca file yang diunggah dan mengubahnya menjadi base64
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, onChange: (value: string) => void) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (reader.result && typeof reader.result === "string") {
+          onChange(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <h2 className="text-4xl font-bold">Manajemen Produk</h2>
       <Container className="bg-secondary">
         <div className="flex gap-4">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleOnSubmit)} className="flex gap-12 justify-center items-center">
-              <FormField
-                name="namaProduk"
-                control={form.control}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="font-semibold">Nama Produk</FormLabel>
-                    <FormControl>
-                      <Input {...field} placeholder="Nama Produk" />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                name="harga"
-                control={form.control}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="font-semibold">Harga</FormLabel>
-                    <FormControl>
-                      <Input type="text" {...field} placeholder="Harga Produk" />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-              <FormField
-                name="stok"
-                control={form.control}
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="font-semibold">Stok</FormLabel>
-                    <FormControl>
-                      <Input type="number" {...field} placeholder="Stok Produk" />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />{" "}
+            <form onSubmit={form.handleSubmit(handleOnSubmit)} className="flex flex-col gap-6 justify-center items-center">
+              <div className="flex gap-12 flex-wrap justify-center">
+                <FormField
+                  name="namaProduk"
+                  control={form.control}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-semibold">Nama Produk</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Nama Produk" />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  name="harga"
+                  control={form.control}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-semibold">Harga</FormLabel>
+                      <FormControl>
+                        <Input type="text" {...field} placeholder="Harga Produk" />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  name="stok"
+                  control={form.control}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-semibold">Stok</FormLabel>
+                      <FormControl>
+                        <Input type="number" {...field} placeholder="Stok Produk" />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  name="imageFile"
+                  control={form.control}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-semibold">Image Produk</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="file"
+                          onChange={(e) => handleFileChange(e, field.onChange)}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
               <Button type="submit" className="bg-primary hover:bg-primary/80 mt-6">
                 <Plus className="mr-2 h-5 w-5" /> Tambah Produk
               </Button>
@@ -209,9 +245,19 @@ export default function ProductsPage() {
         </Table>
       </Container>
 
-      <ConfirmDialog isOpen={confirmDialogOpen} onClose={() => setConfirmDialogOpen(false)} onConfirm={handleConfirmDelete} message="Are you sure you want to delete this product?" />
+      <ConfirmDialog
+        isOpen={confirmDialogOpen}
+        onClose={() => setConfirmDialogOpen(false)}
+        onConfirm={handleConfirmDelete}
+        message="Are you sure you want to delete this product?"
+      />
 
-      <UpdateProductModal product={selectedProduct} isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onUpdate={handleUpdateProduct} />
+      <UpdateProductModal
+        product={selectedProduct}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onUpdate={handleUpdateProduct}
+      />
     </div>
   );
 }
