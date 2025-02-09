@@ -196,32 +196,57 @@ export async function updateUser(id: number, username: string, level: string) {
   }
 }
 
-export const addProduct = async (namaProduk: string, harga: number, stok: number) => {
-  console.log("server :",namaProduk, harga, stok);
+import { v2 as cloudinary } from 'cloudinary';
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+export const uploadToCloudinary = async (file: string) => {
   try {
+    const result = await cloudinary.uploader.upload(file, {
+      folder: 'products', // Menyimpan gambar dalam folder "products"
+    });
+    return result.secure_url;
+  } catch (error) {
+    console.error('Cloudinary Upload Error:', error);
+    throw new Error('Gagal mengunggah gambar');
+  }
+};
+
+export const addProduct = async (namaProduk: string, harga: number, stok: number, imageFile?: string) => {
+  try {
+    let imgUrl = '';
+    if (imageFile) {
+      imgUrl = await uploadToCloudinary(imageFile);
+    }
+
     const product = await prisma.produk.create({
-      data: { 
-        namaProduk, 
-        imgUrl: "",
-        harga: Number(harga), // Pastikan nilai number
-        stok: Number(stok) 
+      data: {
+        namaProduk,
+        harga: Number(harga),
+        stok: Number(stok),
+        imgUrl,
       },
     });
 
-    return { 
-      status: "Success", 
-      data: product, 
-      code: 200 
+    return {
+      status: 'Success',
+      data: product,
+      code: 200,
     };
   } catch (error) {
-    console.error("Database Error:", error); // Log error untuk debugging
-    return { 
-      status: "Failed", 
-      message: "Gagal menambahkan produk", 
-      code: 500 
+    console.error('Database Error:', error);
+    return {
+      status: 'Failed',
+      message: 'Gagal menambahkan produk',
+      code: 500,
     };
   }
 };
+
 
 
 export async function getProducts() {
